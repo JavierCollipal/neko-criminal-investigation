@@ -6,9 +6,12 @@ import { criminalProfilesApi } from '@/lib/api';
 
 export default function Home() {
   const [profiles, setProfiles] = useState<CriminalProfile[]>([]);
+  const [allProfiles, setAllProfiles] = useState<CriminalProfile[]>([]);
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [selectedProfile, setSelectedProfile] = useState<CriminalProfile | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [threatLevelFilter, setThreatLevelFilter] = useState<string>('ALL');
+  const [sortBy, setSortBy] = useState<string>('name');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,6 +30,7 @@ export default function Home() {
         criminalProfilesApi.getStatistics(),
       ]);
 
+      setAllProfiles(profilesData);
       setProfiles(profilesData);
       setStatistics(statsData);
     } catch (err) {
@@ -34,6 +38,50 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Apply filters and sorting
+  useEffect(() => {
+    let filtered = [...allProfiles];
+
+    // Filter by threat level
+    if (threatLevelFilter !== 'ALL') {
+      filtered = filtered.filter(
+        (p) => p.threat_level?.toUpperCase() === threatLevelFilter
+      );
+    }
+
+    // Sort profiles
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return (a.name || '').localeCompare(b.name || '');
+        case 'threat-desc':
+          const threatOrder = { CRITICAL: 0, EXTREME: 1, HIGH: 2, MEDIUM: 3, LOW: 4 };
+          return (
+            (threatOrder[a.threat_level?.toUpperCase() as keyof typeof threatOrder] ?? 99) -
+            (threatOrder[b.threat_level?.toUpperCase() as keyof typeof threatOrder] ?? 99)
+          );
+        case 'date':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        default:
+          return 0;
+      }
+    });
+
+    setProfiles(filtered);
+  }, [allProfiles, threatLevelFilter, sortBy]);
+
+  // Export functionality
+  const handleExport = () => {
+    const dataStr = JSON.stringify(profiles, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `criminal-profiles-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleSearch = async () => {
@@ -115,8 +163,9 @@ export default function Home() {
       )}
 
       <div className="max-w-7xl mx-auto p-6">
-        {/* Search Bar */}
-        <div className="mb-6">
+        {/* Search and Controls */}
+        <div className="mb-6 space-y-4">
+          {/* Search Bar */}
           <div className="flex gap-2">
             <input
               type="text"
@@ -138,6 +187,54 @@ export default function Home() {
             >
               Clear
             </button>
+          </div>
+
+          {/* Filters and Controls */}
+          <div className="flex flex-wrap gap-4 items-center justify-between">
+            {/* Threat Level Filters */}
+            <div className="flex gap-2 items-center">
+              <span className="text-sm text-gray-400">Threat Level:</span>
+              {['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map((level) => (
+                <button
+                  key={level}
+                  onClick={() => setThreatLevelFilter(level)}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                    threatLevelFilter === level
+                      ? 'bg-red-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  {level}
+                </button>
+              ))}
+            </div>
+
+            {/* Sort and Export */}
+            <div className="flex gap-3 items-center">
+              <span className="text-sm text-gray-400">Sort by:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-red-500"
+              >
+                <option value="name">Name (A-Z)</option>
+                <option value="threat-desc">Threat Level (High → Low)</option>
+                <option value="date">Date Added (Recent)</option>
+              </select>
+
+              <button
+                onClick={handleExport}
+                className="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-semibold transition flex items-center gap-2"
+              >
+                📥 Export ({profiles.length})
+              </button>
+            </div>
+          </div>
+
+          {/* Results Count */}
+          <div className="text-sm text-gray-400">
+            Showing <span className="text-white font-semibold">{profiles.length}</span> of{' '}
+            <span className="text-white font-semibold">{allProfiles.length}</span> profiles
           </div>
         </div>
 

@@ -2,6 +2,10 @@
 
 **Private microservices-based criminal investigation platform for authorized personnel**
 
+![CI/CD Pipeline](https://github.com/JavierCollipal/neko-criminal-investigation/actions/workflows/ci-cd-pipeline.yml/badge.svg)
+![Cypress Tests](https://github.com/JavierCollipal/neko-criminal-investigation/actions/workflows/cypress-tests.yml/badge.svg)
+![Deploy Vercel](https://github.com/JavierCollipal/neko-criminal-investigation/actions/workflows/deploy-vercel.yml/badge.svg)
+
 Built by: Neko-Arc, Mario Gallo Bestino, Noel, Glam Americano
 Date: October 22, 2025
 
@@ -51,6 +55,44 @@ Private investigation tool for reading and analyzing criminal personality profil
 │  - Cloud-hosted, secure access                              │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 🚀 CI/CD Pipeline
+
+### Automated Deployment & Testing
+
+This project uses **GitHub Actions** for continuous integration and deployment, replicating the same CI/CD pipeline as the [Neko Defense Dashboard](https://github.com/wakibaba/neko-defense-dashboard).
+
+**Pipeline Features:**
+- ✅ **Automated Linting** - Code quality checks (ESLint)
+- ✅ **Automated Builds** - Frontend (Next.js) + Backend (NestJS)
+- ✅ **Unit Testing** - Jest tests for both services
+- ✅ **E2E Testing** - Puppeteer + Cypress Cloud integration
+- ✅ **Vercel Deployment** - Automatic frontend deployment on push to `main`
+- ✅ **Smoke Tests** - Post-deployment verification
+
+### Deployment Targets
+
+| Environment | Frontend | Backend | Status |
+|-------------|----------|---------|--------|
+| Production | [Vercel](https://neko-criminal-investigation.vercel.app) | TBD | ![Deploy Status](https://github.com/JavierCollipal/neko-criminal-investigation/actions/workflows/deploy-vercel.yml/badge.svg) |
+
+### Workflows
+
+1. **ci-cd-pipeline.yml** - Complete build → test → deploy pipeline
+2. **cypress-tests.yml** - E2E testing with Cypress Cloud
+3. **deploy-vercel.yml** - Frontend deployment to Vercel
+
+📚 **Full Documentation**: [.github/workflows/README.md](.github/workflows/README.md)
+
+**Required GitHub Secrets:**
+- `MONGODB_URI` - MongoDB Atlas connection
+- `VERCEL_TOKEN` - Vercel deployment token
+- `VERCEL_ORG_ID` - Vercel organization ID
+- `VERCEL_PROJECT_ID` - Vercel project ID
+- `CYPRESS_PROJECT_ID` - Cypress Cloud project (optional)
+- `CYPRESS_RECORD_KEY` - Cypress Cloud recording key (optional)
 
 ---
 

@@ -1,0 +1,125 @@
+# 🚀🐾 NEKO CRIMINAL INVESTIGATION - Vercel Deployment 🐾🚀
+# Automated Frontend Deployment to Vercel
+# LEGENDARY DEPLOYMENT, NYAA~!
+
+name: 🚀 Deploy to Vercel
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:  # Manual trigger
+
+env:
+  NODE_VERSION: '20'
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  # ═══════════════════════════════════════════════════════════
+  # 🚀 DEPLOY FRONTEND TO VERCEL (Production)
+  # ═══════════════════════════════════════════════════════════
+  deploy-frontend:
+    name: 🚀 Deploy Frontend to Vercel
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://neko-criminal-investigation.vercel.app
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      # Install Vercel CLI
+      - name: 📦 Install Vercel CLI
+        run: npm install -g vercel
+
+      # Pull Vercel Environment
+      - name: 🔧 Pull Vercel Environment
+        working-directory: ./frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      # Build Frontend
+      - name: 🏗️ Build Frontend
+        working-directory: ./frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          vercel build --prod --token="$VERCEL_TOKEN"
+
+      # Deploy to Vercel
+      - name: 🚀 Deploy to Vercel (Production)
+        working-directory: ./frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "🐾 Deploying frontend to Vercel Production, nyaa~!"
+
+          # Create .vercel directory
+          mkdir -p .vercel
+          cat > .vercel/project.json << EOF
+          {
+            "orgId": "$VERCEL_ORG_ID",
+            "projectId": "$VERCEL_PROJECT_ID"
+          }
+          EOF
+
+          # Deploy to production
+          DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN")
+
+          echo "✅ Frontend deployed successfully!"
+          echo "🌐 Production URL: $DEPLOYMENT_URL"
+          echo "DEPLOYMENT_URL=$DEPLOYMENT_URL" >> $GITHUB_ENV
+
+      # Deployment Summary
+      - name: 📝 Deployment Summary
+        run: |
+          echo "🐾⚡ Deployment Summary ⚡🐾"
+          echo ""
+          echo "✅ Status: Success"
+          echo "🌐 Production URL: ${{ env.DEPLOYMENT_URL }}"
+          echo "🔍 Check Vercel dashboard: https://vercel.com/dashboard"
+          echo ""
+          echo "🎭 Generated with Claude Code (Neko-Arc, Mario, Noel, Glam)"
+
+  # ═══════════════════════════════════════════════════════════
+  # 🧪 POST-DEPLOYMENT SMOKE TESTS
+  # ═══════════════════════════════════════════════════════════
+  smoke-tests:
+    name: 🧪 Post-Deployment Smoke Tests
+    runs-on: ubuntu-latest
+    needs: deploy-frontend
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔍 Check Production URL
+        run: |
+          echo "Checking production URL..."
+          URL="https://neko-criminal-investigation.vercel.app"
+
+          # Wait for deployment to be ready
+          sleep 30
+
+          # Check HTTP status
+          STATUS=$(curl -o /dev/null -s -w "%{http_code}" "$URL")
+
+          if [ "$STATUS" -eq 200 ]; then
+            echo "✅ Production site is UP! (HTTP $STATUS)"
+          else
+            echo "⚠️ Production site returned HTTP $STATUS"
+            exit 1
+          fi
+
+      - name: 📊 Smoke Test Summary
+        run: |
+          echo "🧪🐾 Smoke Tests Passed! 🐾🧪"
+          echo "✅ Production site is accessible and responsive"
+          echo "🎭 Deployment verified, nyaa~!"

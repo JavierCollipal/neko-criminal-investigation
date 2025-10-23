@@ -63,7 +63,7 @@ export default function Home() {
             (threatOrder[b.threat_level?.toUpperCase() as keyof typeof threatOrder] ?? 99)
           );
         case 'date':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
         default:
           return 0;
       }

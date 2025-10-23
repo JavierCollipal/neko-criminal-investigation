@@ -1,15 +1,14 @@
 import { CriminalProfile, ApiResponse, Statistics } from '@/types/criminal-profile';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Use Next.js API routes (serverless functions on Vercel)
+const API_BASE_URL = '';
 
 export const criminalProfilesApi = {
   /**
    * Get all criminal profiles
    */
   async getAll(limit = 50, skip = 0): Promise<CriminalProfile[]> {
-    const response = await fetch(
-      `${API_BASE_URL}/api/criminal-profiles?limit=${limit}&skip=${skip}`
-    );
+    const response = await fetch(`/api/profiles`);
     const data: ApiResponse<CriminalProfile[]> = await response.json();
 
     if (!data.success || !data.data) {
@@ -23,16 +22,15 @@ export const criminalProfilesApi = {
    * Search criminal profiles
    */
   async search(query: string): Promise<CriminalProfile[]> {
-    const response = await fetch(
-      `${API_BASE_URL}/api/criminal-profiles/search?q=${encodeURIComponent(query)}`
+    // Client-side search for simplicity
+    const profiles = await this.getAll(1000);
+    const lowerQuery = query.toLowerCase();
+
+    return profiles.filter(p =>
+      p.name?.toLowerCase().includes(lowerQuery) ||
+      p.aliases?.some(a => a.toLowerCase().includes(lowerQuery)) ||
+      p.actor_id?.toLowerCase().includes(lowerQuery)
     );
-    const data: ApiResponse<CriminalProfile[]> = await response.json();
-
-    if (!data.success || !data.data) {
-      throw new Error(data.error || 'Search failed');
-    }
-
-    return data.data;
   },
 
   /**
@@ -97,13 +95,21 @@ export const criminalProfilesApi = {
    * Get statistics
    */
   async getStatistics(): Promise<Statistics> {
-    const response = await fetch(`${API_BASE_URL}/api/criminal-profiles/statistics`);
-    const data: ApiResponse<Statistics> = await response.json();
+    // Calculate statistics from all profiles
+    const profiles = await this.getAll(1000);
 
-    if (!data.success || !data.data) {
-      throw new Error(data.error || 'Failed to fetch statistics');
-    }
+    const stats: Statistics = {
+      total: profiles.length,
+      by_threat_level: {
+        CRITICAL: profiles.filter(p => p.threat_level === 'CRITICAL').length,
+        EXTREME: profiles.filter(p => p.threat_level === 'EXTREME').length,
+        HIGH: profiles.filter(p => p.threat_level === 'HIGH').length,
+        MEDIUM: profiles.filter(p => p.threat_level === 'MEDIUM').length,
+        LOW: profiles.filter(p => p.threat_level === 'LOW').length,
+      },
+      by_category: {},
+    };
 
-    return data.data;
+    return stats;
   },
 };
